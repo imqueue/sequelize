@@ -26,8 +26,6 @@ import isDefined = js.isDefined;
 import isOk = js.isOk;
 
 /* models exports! */
-export * from './BaseDictionary';
-export * from './BaseParanoid';
 export * from './BaseModel';
 export * from './helpers';
 export * from './decorators';
