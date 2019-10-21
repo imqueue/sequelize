@@ -25,16 +25,11 @@ import { Sequelize } from './BaseModel';
 import isDefined = js.isDefined;
 import isOk = js.isOk;
 
-import * as s from 'sequelize-typescript';
-
-module.exports = s;
-
 /* models exports! */
 export * from './BaseModel';
 export * from './helpers';
 export * from './decorators';
 export * from './types';
-
 
 const JS_EXT_RX = /\.js$/;
 

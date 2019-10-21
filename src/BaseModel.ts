@@ -103,6 +103,8 @@ import {
 import QueryTypes = require('sequelize/types/lib/query-types');
 import { ColumnIndexOptions } from './decorators/index';
 
+export * from 'sequelize-typescript';
+
 export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
 
 /**
