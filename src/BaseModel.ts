@@ -83,8 +83,9 @@ import {
     BulkCreateOptions as BulkCreateOptionsOrigin,
     CreateOptions as CreateOptionsOrigin,
     DropOptions,
-    FindOptions,
-    Identifier,
+    FindOptions as FindOptionsOrigin,
+    Identifier, IncludeOptions,
+    InitOptions as InitOptionsOrigin,
     ModelAttributes,
     ModelOptions,
     QueryInterface as QueryInterfaceOrigin,
@@ -103,7 +104,16 @@ import {
     Sequelize as SequelizeOrigin,
 } from 'sequelize-typescript';
 import QueryTypes = require('sequelize/types/lib/query-types');
-import { ColumnIndexOptions } from './decorators/index';
+import {
+    ColumnIndexOptions,
+    IDynamicViewDefineOptions,
+    RX_MATCHER,
+    RX_NAME_MATCHER,
+    ViewParams,
+} from './decorators';
+import { query } from './helpers';
+import sql = query.sql;
+import E = query.E;
 
 export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
 
@@ -111,6 +121,11 @@ export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
  * Original toJSON method from sequelize's Model class.
  */
 const toJSON = Model.prototype.toJSON;
+const RX_CREATE_VIEW = new RegExp('create\\s+(or\\s+replace\\s+)?' +
+    '(materialized\\s+)?view\\s+(.*?)\\s+as', 'i');
+const RX_SQL_END = /;$/;
+const RX_RETURNING = /returning\s+\*/i;
+const ALIAS_PATH_DELIMITER = '->';
 
 /**
  * Extends original SyncOptions from Sequelize to add view support
@@ -118,12 +133,23 @@ const toJSON = Model.prototype.toJSON;
 export interface SyncOptions extends SyncOptionsOrigin {
     treatAsView?: boolean;
     withNoViews?: boolean;
+    withoutDrop?: boolean;
 }
-
+export interface FindOptions extends FindOptionsOrigin {
+    viewParams?: ViewParams;
+}
+export interface InitOptions
+    extends InitOptionsOrigin, IDynamicViewDefineOptions {}
 export interface ReturningOptions {
     returning?: boolean | string[];
 }
-
+export interface WithIncludeMap extends InitOptions {
+    includeMap?: {
+        [propertyName: string]: WithIncludeMap & IncludeOptions & FindOptions;
+    };
+    includeNames?: string[];
+    parent: WithIncludeMap;
+}
 // noinspection JSUnusedGlobalSymbols
 export type IModelClass<T extends BaseModel<T>> = new () => T;
 
@@ -200,6 +226,7 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         select,
         increment,
         rawSelect,
+        QueryGenerator,
     } = queryInterface as QueryInterface;
     const del = (queryInterface as QueryInterface).delete;
 
@@ -312,20 +339,6 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
     };
 
     /**
-     * Returns selected rows
-     */
-    (queryInterface as QueryInterface).select = function(
-        model: typeof Model | null,
-        tableName: string,
-        options?: QueryOptionsWithWhere,
-    ): Promise<object[]> {
-        fixReturningOptions(options as any);
-
-        return select.call(this,
-            model, tableName, options);
-    };
-
-    /**
      * Increments a row value
      */
     (queryInterface as QueryInterface).increment = function(
@@ -339,21 +352,6 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
 
         return increment.call(this,
             instance, tableName, values, identifier, options);
-    };
-
-    /**
-     * Selects raw without parsing the string into an object
-     */
-    (queryInterface as QueryInterface).rawSelect = function(
-        tableName: string,
-        options: QueryOptionsWithWhere,
-        attributeSelector: string | string[],
-        model?: typeof Model
-    ): Promise<string[]> {
-        fixReturningOptions(options as any);
-
-        return rawSelect.call(this,
-            tableName, options, attributeSelector, model);
     };
 
     /**
@@ -402,6 +400,133 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         return this.sequelize.query(
             viewDefinition,
             this.sequelize.options,
+        );
+    };
+
+    /**
+     * Returns selected rows
+     */
+    (queryInterface as QueryInterface).select = function(
+        model: typeof Model | null,
+        tableName: string,
+        options?: QueryOptionsWithWhere,
+    ): Promise<object[]> {
+        fixReturningOptions(options as any);
+
+        return select.call(this,
+            model, tableName, options);
+    };
+
+    /**
+     * Increments a row value
+     */
+    (queryInterface as QueryInterface).increment = function(
+        instance: Model,
+        tableName: string,
+        values: object,
+        identifier: WhereOptions,
+        options?: QueryOptions
+    ): Promise<object> {
+        fixReturningOptions(options);
+
+        return increment.call(this,
+            instance, tableName, values, identifier, options);
+    };
+
+    /**
+     * Selects raw without parsing the string into an object
+     */
+    (queryInterface as QueryInterface).rawSelect = function(
+        tableName: string,
+        options: QueryOptionsWithWhere,
+        attributeSelector: string | string[],
+        model?: typeof Model
+    ): Promise<string[]> {
+        fixReturningOptions(options as any);
+
+        return rawSelect.call(this,
+            tableName, options, attributeSelector, model);
+    };
+
+    /**
+     * Override QueryGenerator behavior for DynamicViews on select queries
+     */
+    const { selectQuery } = QueryGenerator as any;
+
+    // takes into account dynamic view can be included
+    function fixIncludes(
+        options: WithIncludeMap & IncludeOptions,
+        sqlQuery: string,
+        parentViewParams?: ViewParams,
+        path: string = '',
+    ): string {
+        const model: typeof BaseModel = options.model as typeof BaseModel;
+        const modelOptions: InitOptions = (
+            (model || {} as any).options || {} as any
+        ) as InitOptions;
+
+        path = path
+            ? `${path}${ALIAS_PATH_DELIMITER}${options.as}`
+            : (options.as || '');
+
+        if (modelOptions.isDynamicView && (
+            options.viewParams || parentViewParams
+        )) {
+
+            const viewParams = Object.assign({},
+                parentViewParams || {},
+                options.viewParams || {},
+            );
+
+            sqlQuery = sqlQuery.replace(
+                `JOIN "${model.getTableName()}" AS "${path}"`,
+                `JOIN (${model.getViewDefinition(viewParams, true)
+                    .replace(RX_SQL_END, '')
+                }) AS "${path}"`,
+            );
+        }
+
+        if (options.includeMap) {
+            for (const prop of Object.keys(options.includeMap)) {
+                sqlQuery = fixIncludes(
+                    options.includeMap[prop],
+                    sqlQuery,
+                    parentViewParams,
+                    path,
+                );
+            }
+        }
+
+        return sqlQuery;
+    }
+
+    (QueryGenerator as any).selectQuery = (
+        tableName: string,
+        options: FindOptions,
+        model: typeof BaseModel,
+    ) => {
+        const modelOptions: InitOptions = model.options as InitOptions;
+        let sqlQuery = selectQuery.call(
+            QueryGenerator as any,
+            tableName, options, model,
+        );
+        const viewParams = Object.assign({}, modelOptions.viewParams);
+
+        if (modelOptions.isDynamicView && options.viewParams) {
+            Object.assign(viewParams, options.viewParams);
+
+            sqlQuery = sqlQuery.replace(
+                `FROM "${tableName}" AS`,
+                `FROM (${model.getViewDefinition(viewParams, true)
+                    .replace(RX_SQL_END, '')
+                }) AS`,
+            );
+        }
+
+        return fixIncludes(
+            options as WithIncludeMap,
+            sqlQuery,
+            options.viewParams,
         );
     };
 
@@ -490,10 +615,10 @@ export class Sequelize extends SequelizeOrigin {
      *
      * @return {Promise<any>}
      */
-    public syncViews(): Promise<any> {
+    public syncViews(options?: SyncOptions): Promise<any> {
         const views = this.getViews();
 
-        return Promise.all(views.map((view) => view.syncView()));
+        return Promise.all(views.map((view) => view.syncView(options)));
     }
 
     public getModelsWithIndices() {
@@ -531,33 +656,35 @@ export class Sequelize extends SequelizeOrigin {
      * Overriding native query() method to support { returning: string[] }
      * option for queries in a proper way
      *
-     * @param {string | { query: string, values: any[] }} sql
+     * @param {string | { query: string, values: any[] }} sqlQuery
      * @param {QueryOptions} options
      */
     public query(
-        sql: string | { query: string, values: any[] },
+        sqlQuery: string | { query: string, values: any[] },
         options?: QueryOptions | QueryOptionsWithType<QueryTypes.RAW>,
     ): Promise<any> {
         if (options &&
             Array.isArray((options as QueryOptions).returning) &&
             ((options as QueryOptions).returning as string[]).length
         ) {
-            const sqlText = (typeof sql === 'string' ? sql : sql.query)
-                .replace(/returning\s+\*/i, `RETURNING ${
-                    ((options as QueryOptions).returning as string[])
-                        .map(field => `"${field}"`).join(', ')
-                }`);
+            const sqlText = (typeof sqlQuery === 'string'
+                ? sqlQuery
+                : sqlQuery.query
+            ).replace(RX_RETURNING, `RETURNING ${
+                ((options as QueryOptions).returning as string[])
+                    .map(field => `"${field}"`).join(', ')
+            }`);
 
-            if (typeof sql === 'string') {
-                sql = sqlText;
+            if (typeof sqlQuery === 'string') {
+                sqlQuery = sqlText;
             } else {
-                sql.query = sqlText;
+                sqlQuery.query = sqlText;
             }
         }
 
-        const query = super.query;
+        const original = super.query;
 
-        return query.call(this, sql, options).then((entities: any) => {
+        return original.call(this, sqlQuery, options).then((entities: any) => {
             if (!(entities && Array.isArray(entities) && entities.length)) {
                 return entities;
             }
@@ -627,12 +754,56 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
     public static syncView(options?: SyncOptions): Promise<any> {
         const self: any = this;
 
+        if (options && options.withoutDrop) {
+            // noinspection TypeScriptUnresolvedVariable
+            return self.QueryInterface.createView(
+                self.getTableName(),
+                self.getViewDefinition(),
+            );
+        }
+
         // noinspection TypeScriptUnresolvedVariable
         return self.QueryInterface.dropView(self.getTableName())
             .then(() => self.QueryInterface.createView(
                 self.getTableName(),
                 self.getViewDefinition(),
             ));
+    }
+
+    /**
+     * Returns view definition SQL string.
+     *
+     * @param {ViewParams} [viewParams]
+     * @param {boolean} [asQuery]
+     * @return {string}
+     */
+    public static getViewDefinition(
+        viewParams: ViewParams = {},
+        asQuery: boolean = false,
+    ) {
+        const self: any = this;
+        let viewDef: string = self.options.viewDefinition || '';
+
+        viewParams = Object.assign({},
+            self.options.viewParams,
+            viewParams || {},
+        );
+
+        if (self.options.isDynamicView) {
+            (viewDef.match(RX_MATCHER) || []).forEach(param => {
+                // noinspection JSUnusedLocalSymbols
+                const [_, name] = (param.match(RX_NAME_MATCHER) || ['', '']);
+                const RX_PARAM = new RegExp(`@\{${name}\}`, 'g');
+
+                viewDef = viewDef.replace(RX_PARAM, E(viewParams[name]) + '');
+            });
+        }
+
+        if (asQuery) {
+            viewDef = viewDef.replace(RX_CREATE_VIEW, '');
+        }
+
+        return sql(viewDef);
     }
 
     /**
@@ -675,7 +846,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
             // noinspection TypeScriptUnresolvedVariable
             chain.then(() => self.QueryInterface.sequelize.query(`
                 DROP INDEX${options.concurrently
-                    ? ' CONCURRENTLY' : ''} IF EXISTS "${indexName}"
+                ? ' CONCURRENTLY' : ''} IF EXISTS "${indexName}"
             `));
         }
 
@@ -687,7 +858,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
             ? ' CONCURRENTLY' : ''}${options.safe
             ? ' IF NOT EXISTS' : ''} "${indexName}"${options.method
             ? ` USING ${options.method}` : ''} ON "${
-                this.getTableName()}" (${options.expression
+            this.getTableName()}" (${options.expression
             ? `(${options.expression})` : `"${column}"`})${options.collation
             ? ` COLLATE ${options.collation}` : ''}${options.opClass
             ? ` ${options.opClass}` : ''}${options.order
@@ -700,15 +871,6 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
             `));
 
         return chain;
-    }
-
-    /**
-     * Returns view definition SQL string.
-     *
-     * @return {string}
-     */
-    public static getViewDefinition() {
-        return (this as any).options.viewDefinition;
     }
 
     // Make sure finders executed on views properly map numeric types
@@ -865,7 +1027,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
         for (const column of columns) {
             const value = (this as any)[column];
 
-            if (value === undefined) {
+            if (value === undefined || value === null) {
                 continue;
             }
 

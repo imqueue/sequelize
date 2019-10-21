@@ -86,5 +86,6 @@ function annotate(
     } as any);
 }
 
+export * from './DynamicView';
 export * from './View';
 export * from './NullableIndex';
