@@ -75,6 +75,8 @@
  *     simply cast options to the same type name as error states, but import
  *     this type from this module.
  */
+export * from 'sequelize-typescript';
+
 import Promise = require('bluebird');
 import {
     BuildOptions as BuildOptionsOrigin,
@@ -102,8 +104,6 @@ import {
 } from 'sequelize-typescript';
 import QueryTypes = require('sequelize/types/lib/query-types');
 import { ColumnIndexOptions } from './decorators/index';
-
-export * from 'sequelize-typescript';
 
 export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
 
