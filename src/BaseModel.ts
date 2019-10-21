@@ -105,9 +105,6 @@ import { ColumnIndexOptions } from './decorators/index';
 
 export * from 'sequelize-typescript';
 
-// noinspection JSUnusedGlobalSymbols
-export type ModelClassGetter = (returns?: void) => typeof BaseModel;
-
 export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
 
 /**

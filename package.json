@@ -27,7 +27,8 @@
     "@imqueue/js": "^1.0.3",
     "@imqueue/rpc": "^1.3.9",
     "@types/validator": "^10.11.3",
-    "bluebird": "^3.7.0",
+    "@types/bluebird": "^3.5.28",
+    "bluebird": "^3.7.1",
     "chalk": "^2.4.2",
     "dotenv": "^8.1.0",
     "pg": "^7.12.1",
@@ -37,7 +38,6 @@
     "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.27",
     "@types/chai": "^4.2.3",
     "@types/chalk": "^2.2.0",
     "@types/dotenv": "^6.1.1",
