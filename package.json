@@ -4,7 +4,7 @@
   "description": "Sequelize ORM refines for @imqueue",
   "main": "index.js",
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "build": "tsc",
     "mocha": "nyc mocha",
     "show:test": "/usr/bin/env node -e \"require('open')('file://`pwd`/coverage/index.html',{wait:false});\"",
