@@ -224,7 +224,7 @@ export namespace query {
         fields: string[],
         model?: typeof BaseModel,
     ): string[] {
-        let filteredAttributes =  (attributes
+        let filteredAttributes = (attributes
             ? Object.keys(attributes).filter(attr => ~fields.indexOf(attr))
             : []);
 
@@ -265,7 +265,7 @@ export namespace query {
 
             return null;
         })
-        .filter(idField => idField) || [];
+            .filter(idField => idField) || [];
     }
 
     /**
@@ -652,6 +652,9 @@ export namespace query {
         if (queryOptions.attributes) {
             delete queryOptions.attributes;
         }
+
+        queryOptions.distinct = true;
+        queryOptions.col = primaryKeys(model).shift();
 
         return queryOptions;
     }
