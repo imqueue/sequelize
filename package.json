@@ -4,7 +4,6 @@
   "description": "Sequelize ORM refines for @imqueue",
   "main": "index.js",
   "scripts": {
-    "prepack": "npm i && npm run build && npm run clean:ts",
     "prepublish": "npm run build",
     "build": "tsc",
     "mocha": "nyc mocha",
