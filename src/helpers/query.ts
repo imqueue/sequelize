@@ -654,7 +654,7 @@ export namespace query {
         }
 
         queryOptions.distinct = true;
-        queryOptions.col = primaryKeys(model).shift();
+        queryOptions.col = primaryKeys(model).shift() as string;
 
         return queryOptions;
     }
@@ -886,13 +886,55 @@ export namespace query {
             ) {
                 Object.assign(options.where, { [prop]: parseFilter(data) });
             } else if (isArray(data)) {
-                Object.assign(options.where, { [prop]: { [Op.in]: data } });
+                Object.assign(options.where, {
+                    [prop]: buildWhereFromArray(data),
+                });
             } else {
                 Object.assign(options.where, parseFilterValue(prop, data));
             }
         }
 
         return options;
+    }
+
+    /**
+     * Builds where operations (conditions) from an array of values using
+     * OR operator between given conditions.
+     *
+     * @param {any[]} data
+     * @return any
+     */
+    export function buildWhereFromArray(data: any[]) {
+        const ops: any[] = [];
+        const ins: any[] = [];
+
+        for (const value of data) {
+            if (RX_LIKE.test(value)) {
+                ops.push({ [Op.iLike]: value });
+            } else if (RX_GTE.test(value)) {
+                ops.push({ [Op.gte]: parseValue(value.replace(RX_GTE, '')) });
+            } else if (RX_GT.test(value)) {
+                ops.push({ [Op.gt]: parseValue(value.replace(RX_GT, '')) });
+            } else if (RX_LTE.test(value)) {
+                ops.push({ [Op.lte]: parseValue(value.replace(RX_LTE, '')) });
+            } else if (RX_LT.test(value)) {
+                ops.push({ [Op.lt]: parseValue(value.replace(RX_LT, '')) });
+            } else if (RX_EQ.test(value)) {
+                ops.push({ [Op.eq]: parseValue(value.replace(RX_EQ, '')) });
+            } else {
+                ins.push(value);
+            }
+        }
+
+        if (!ops.length && ins.length) {
+            return { [Op.in]: ins };
+        }
+
+        if (ins.length) {
+            ops.push({ [Op.in]: ins });
+        }
+
+        return { [Op.or]: ops };
     }
 
     // noinspection JSUnusedGlobalSymbols
