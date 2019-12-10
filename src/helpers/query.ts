@@ -547,14 +547,25 @@ export namespace query {
      * @param {T} model - model class to map entity to
      * @param {I} input - data input object related to a given model
      * @param {FieldsInput} [fields] - fields map to return on created entity
+     * @param {Transaction} [transaction] - transaction
      * @return {Promise<Partial<T>>}
      */
     export async function createEntity<T extends BaseModel<T>, I>(
         model: typeof BaseModel,
         input: I,
         fields?: FieldsInput,
+        transaction?: Transaction,
     ): Promise<Partial<T>> {
-        return await doCreateEntity(model, input, fields);
+        return await doCreateEntity<T, I>(
+            model,
+            input,
+            fields,
+            transaction,
+            undefined,
+            undefined,
+            false,
+            !transaction,
+        );
     }
 
     /**
@@ -568,6 +579,7 @@ export namespace query {
      * @param {string} [parentProperty]
      * @param {boolean} [noAppend]
      * @param {T} parent
+     * @param {boolean} doCommit
      * @return {Promise<Partial<T>>}
      * @access private
      */
@@ -579,6 +591,7 @@ export namespace query {
         parentProperty?: string,
         parent?: T,
         noAppend: boolean = false,
+        doCommit: boolean = true,
     ): Promise<Partial<T>> {
         transaction = transaction || await database().transaction({
             autocommit: false,
@@ -591,7 +604,7 @@ export namespace query {
                 await Promise.all((input as I[]).map(inputItem =>
                     doCreateEntity(
                         model, inputItem, fields, transaction,
-                        parentProperty, parent, true,
+                        parentProperty, parent, true, doCommit,
                     )),
                 ),
             );
@@ -626,7 +639,7 @@ export namespace query {
             await doCreateEntity(...args);
         }));
 
-        if (!parent) {
+        if (!parent && doCommit) {
             await transaction.commit();
         }
 
