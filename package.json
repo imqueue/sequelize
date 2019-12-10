@@ -1,6 +1,6 @@
 {
   "name": "@imqueue/sequelize",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Sequelize ORM refines for @imqueue",
   "main": "index.js",
   "scripts": {
