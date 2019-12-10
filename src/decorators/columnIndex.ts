@@ -49,13 +49,13 @@ export interface ColumnIndexOptions {
     unique: boolean;
 }
 
-export function Index(options: Partial<ColumnIndexOptions>): FunctionType;
-export function Index(
+export function ColumnIndex(options: Partial<ColumnIndexOptions>): FunctionType;
+export function ColumnIndex(
     target: any,
     propertyName: string,
     propertyDescriptor?: PropertyDescriptor,
 ): void;
-export function Index(...args: any[]): FunctionType | void {
+export function ColumnIndex(...args: any[]): FunctionType | void {
     if (args.length >= 2) {
         const [target, propertyName, propertyDescriptor] = args;
 

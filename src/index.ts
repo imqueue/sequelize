@@ -17,7 +17,7 @@
  */
 import { js } from '@imqueue/js';
 import { DEFAULT_IMQ_SERVICE_OPTIONS, ILogger } from '@imqueue/rpc';
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 import * as fs from 'fs';
 import { resolve, sep } from 'path';
 import { SequelizeOptions } from 'sequelize-typescript';
@@ -28,7 +28,7 @@ import isOk = js.isOk;
 /* models exports! */
 export * from './BaseModel';
 export * from './helpers';
-export * from './decorators';
+export * from './decorators/columnIndex';
 export * from './types';
 
 const JS_EXT_RX = /\.js$/;
