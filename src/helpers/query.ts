@@ -846,15 +846,41 @@ export namespace query {
      * @param {T} filter
      * @return {any} - toWhereOptions clause options
      */
-    export function toWhereOptions<T>(filter?: T): any {
+    export function toWhereOptions<T>(
+        filter?: T,
+        inputType?: new () => T,
+    ): any {
         if (!filter) {
             return {};
+        }
+
+        let inputData = null;
+
+        if (inputType) {
+            inputData = new inputType();
         }
 
         const options: any = {};
 
         for (const prop of Object.keys(filter)) {
             let data: any = (filter as any)[prop];
+            const inputDataProp = inputData && (inputData as any)[prop];
+
+            if (inputData && inputDataProp) {
+                const includeData = {
+                    model: inputDataProp.model,
+                    required: true,
+                    ...toWhereOptions(withRangeFilters(data),
+                        inputDataProp.input,
+                    ),
+                };
+
+                options.include = options.include
+                    ? options.include.push(includeData)
+                    : [includeData];
+
+                continue;
+            }
 
             if (isArray(data)) {
                 if (data.length === 0) {

@@ -89,3 +89,4 @@ function annotate(
 export * from './DynamicView';
 export * from './View';
 export * from './NullableIndex';
+export * from './AssociatedWith';
