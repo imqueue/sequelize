@@ -15,7 +15,7 @@
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-import { ColumnIndexOptions, FunctionType, Index } from './index';
+import { ColumnIndexOptions, FunctionType, ColumnIndex } from './columnIndex';
 
 type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
 
@@ -38,10 +38,14 @@ export function NullableIndex(...args: any[]): FunctionType | void {
         const nullPredicate = `"${propertyName}" IS NULL`;
         const notNullPredicate = `"${propertyName}" IS NOT NULL`;
 
-        Index({ expression: nullPredicate, predicate: nullPredicate })(
-            target, propertyName, propertyDescriptor);
-        Index({ expression: notNullPredicate, predicate: notNullPredicate })(
-            target, propertyName, propertyDescriptor);
+        ColumnIndex({
+            expression: nullPredicate,
+            predicate: nullPredicate,
+        })(target, propertyName, propertyDescriptor);
+        ColumnIndex({
+            expression: notNullPredicate,
+            predicate: notNullPredicate,
+        })(target, propertyName, propertyDescriptor);
 
         return;
     }
@@ -51,10 +55,10 @@ export function NullableIndex(...args: any[]): FunctionType | void {
         propertyName: string,
         propertyDescriptor?: PropertyDescriptor,
     ) => {
-        Index(Object.assign(args[0], {
+        ColumnIndex(Object.assign(args[0], {
             expression: `"${propertyName}" IS NULL`
         }))(target, propertyName, propertyDescriptor);
-        Index(Object.assign(args[0], {
+        ColumnIndex(Object.assign(args[0], {
             expression: `"${propertyName}" IS NOT NULL`
         }))(target, propertyName, propertyDescriptor);
     };
