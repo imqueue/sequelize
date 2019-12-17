@@ -15,7 +15,7 @@
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-import { js } from '@imqueue/js';
+import { js, object } from '@imqueue/js';
 import { CountOptions, Includeable, Transaction } from 'sequelize';
 import {
     Association,
@@ -866,6 +866,8 @@ export namespace query {
         if (!filter) {
             return {};
         }
+
+        object.clearObject(filter);
 
         let inputData = null;
 
