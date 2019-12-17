@@ -30,15 +30,19 @@ export interface IAssociated {
  * @param {IAssociated} association - input data
  */
 export function AssociatedWith(
-    association?: IAssociated,
+    cb: () => IAssociated,
 ) {
-
     return (target: any, key: string) => {
-        if (!association) { return target; }
+        const association = cb();
+
+        if (!association) {
+            return target;
+        }
 
         if (!association.modelFieldName) {
             association.modelFieldName = key;
         }
+
         Object.defineProperty(target, key, {
             value: {
                 model: association.model,
