@@ -122,7 +122,7 @@ export namespace query {
      * @param {typeof Model} model
      * @param {any | any[]} input
      * @param {string[]} [attributes]
-     * @return {M}
+     * @return {any}
      */
     export const pureData: PureDataFunction = <T, M extends BaseModel<M>>(
         model: typeof BaseModel,
@@ -857,6 +857,7 @@ export namespace query {
      * Builds toWhereOptions clause query sub-part for a given filter type
      *
      * @param {T} filter
+     * @param {new () => T} inputType
      * @return {any} - toWhereOptions clause options
      */
     export function toWhereOptions<T>(
@@ -1044,7 +1045,7 @@ export namespace query {
         for (const include of (queryOptions.include || [])) {
             const model = (include as IncludeOptions).model;
 
-            // noinspection TypeScriptValidateTypes
+            // noinspection JSIncompatibleTypesComparison
             if (model === currentModel) {
                 if (!path.length) {
                     return include as IncludeOptions;
