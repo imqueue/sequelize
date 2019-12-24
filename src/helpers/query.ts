@@ -891,8 +891,8 @@ export namespace query {
                     ),
                 };
 
-                options.include = options.include
-                    ? options.include.push(includeData)
+                options.include = js.isArray(options.include)
+                    ? options.include.concat(includeData)
                     : [includeData];
 
                 continue;
