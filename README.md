@@ -18,7 +18,9 @@ npm i --save @imqueue/sequelize
 
 ~~~bash
 git clone git@github.com:imqueue/sequelize.git
-npm run docs
+cd sequelize
+npm i
+npm run doc
 ~~~
 
 # Usage
