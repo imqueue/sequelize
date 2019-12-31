@@ -51,7 +51,7 @@ export function DynamicView(
     const viewParams = options.viewParams || {};
 
     (viewDef.match(RX_MATCHER) || []).forEach(param => {
-        const [_, name] = (param.match(RX_NAME_MATCHER) || ['', '']);
+        const [, name] = (param.match(RX_NAME_MATCHER) || ['', '']);
 
         if (typeof viewParams[name] !== 'string') {
             throw new TypeError(

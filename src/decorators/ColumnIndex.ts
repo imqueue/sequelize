@@ -20,6 +20,7 @@ import { addOptions, getOptions } from 'sequelize-typescript';
 export type FunctionType = (...args: any[]) => any;
 
 export enum IndexMethod {
+    // noinspection JSUnusedGlobalSymbols
     BTREE = 'BTREE',
     HASH = 'HASH',
     GIST = 'GIST',
@@ -29,6 +30,7 @@ export enum IndexMethod {
 }
 
 export enum SortOrder {
+    // noinspection JSUnusedGlobalSymbols
     ASC = 'ASC',
     DESC = 'DESC',
 }
@@ -86,7 +88,4 @@ function annotate(
     } as any);
 }
 
-export * from './DynamicView';
-export * from './View';
-export * from './NullableIndex';
-export * from './AssociatedWith';
+

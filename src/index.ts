@@ -28,7 +28,7 @@ import isOk = js.isOk;
 /* models exports! */
 export * from './BaseModel';
 export * from './helpers';
-export * from './decorators/columnIndex';
+export * from './decorators';
 export * from './types';
 
 const JS_EXT_RX = /\.js$/;

@@ -15,7 +15,7 @@
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-import { ColumnIndexOptions, FunctionType, ColumnIndex } from './columnIndex';
+import { ColumnIndexOptions, FunctionType, ColumnIndex } from './ColumnIndex';
 
 type Omit<T, K extends keyof any> = Pick<T, Exclude<keyof T, K>>;
 

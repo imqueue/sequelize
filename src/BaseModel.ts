@@ -110,7 +110,7 @@ import {
     RX_MATCHER,
     RX_NAME_MATCHER,
     ViewParams,
-} from './decorators/columnIndex';
+} from './decorators';
 import { query } from './helpers';
 import sql = query.sql;
 import E = query.E;
