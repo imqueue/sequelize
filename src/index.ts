@@ -176,7 +176,7 @@ export function database(
     }
 
     if (!options.connectionString) {
-        throw new TypeError('Database connection string is required!')
+        throw new TypeError('Database connection string is required!');
     }
 
     if (!options.logger) {
