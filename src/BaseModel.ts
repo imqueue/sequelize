@@ -690,6 +690,7 @@ export class Sequelize extends SequelizeOrigin {
             }
 
             for (const entity of entities) {
+                // noinspection SuspiciousTypeOfGuard
                 if (entity instanceof BaseModel && options) {
                     // noinspection TypeScriptUnresolvedVariable
                     (entity as any)._options.returning = (
@@ -1019,7 +1020,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
      * @return {BaseModel}
      */
     public fixNumbers(): BaseModel<T> {
-        const model: BaseModel<T> = this.sequelize.models[
+        const model = this.sequelize.models[
             this.constructor.name
         ] as any as BaseModel<T>;
         const columns = Object.keys((model as any).rawAttributes);
