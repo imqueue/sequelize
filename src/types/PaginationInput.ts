@@ -24,6 +24,6 @@ export class PaginationInput {
     @property('number')
     public limit: number;
 
-    @property('number')
+    @property('number', true)
     public count?: number;
 }
