@@ -33,3 +33,4 @@ debug*
 .gitlab-ci.yml
 .DS_Store
 Thumbs.db
+TODO.*
