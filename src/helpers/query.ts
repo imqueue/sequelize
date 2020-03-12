@@ -891,6 +891,9 @@ export namespace query {
                     ),
                 };
 
+                // NOTE: If included data contains fields which are empty,
+                // it should be deleted
+                object.clearObject(filter);
                 options.include = js.isArray(options.include)
                     ? options.include.concat(includeData)
                     : [includeData];
