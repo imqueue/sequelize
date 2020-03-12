@@ -353,7 +353,7 @@ export namespace query {
     export function autoQuery<T>(
         model: any,
         fields?: any,
-        ...merge: Array<Partial<T> | undefined>
+        ...merge: (Partial<T> | undefined)[]
     ): T {
         const queryOptions: any = {};
         const { order } = merge.find((item: any) => item && !!item.order) ||
@@ -436,13 +436,13 @@ export namespace query {
      * @type {RelationArgs}
      * @access private
      */
-    type RelationArgs = Array<[
+    type RelationArgs = [
         any,
         any,
         FieldsInput | undefined,
         Transaction | undefined,
         string
-    ]>;
+    ][];
 
     /**
      * Foreign key map representation, where related property name references
@@ -658,7 +658,7 @@ export namespace query {
     export function autoCountQuery(
         model: any,
         fields?: any,
-        ...merge: Array<Partial<CountOptions> | undefined>
+        ...merge: (Partial<CountOptions> | undefined)[]
     ): CountOptions {
         const queryOptions = autoQuery<CountOptions>(model, fields, ...merge);
 
@@ -754,7 +754,7 @@ export namespace query {
         order.order = [];
 
         for (const field of fields) {
-            (order.order as Array<[string, string]>).push(
+            (order.order as [string, string][]).push(
                 [field, toOrderDirection(orderBy[field])],
             );
         }
@@ -949,7 +949,7 @@ export namespace query {
      * @param {any[]} data
      * @return any
      */
-    export function buildWhereFromArray(data: any[]) {
+    export function buildWhereFromArray(data: any[]): any {
         const ops: any[] = [];
         const ins: any[] = [];
 
@@ -1041,7 +1041,7 @@ export namespace query {
      */
     export function getInclude(
         queryOptions: FindOptions,
-        path: Array<typeof Model>,
+        path: typeof Model[],
     ): IncludeOptions | null {
         const currentModel = path.shift();
 

@@ -622,7 +622,7 @@ export class Sequelize extends SequelizeOrigin {
     }
 
     public getModelsWithIndices() {
-        const models: Array<typeof BaseModel> = [];
+        const models: typeof BaseModel[] = [];
 
         (this as any).modelManager.models.forEach((model: any) => {
             if (model && model.options &&
@@ -640,8 +640,8 @@ export class Sequelize extends SequelizeOrigin {
      *
      * @return {Array<typeof BaseModel>}
      */
-    public getViews(): Array<typeof BaseModel> {
-        const views: Array<typeof BaseModel> = [];
+    public getViews(): typeof BaseModel[] {
+        const views: typeof BaseModel[] = [];
 
         (this as any).modelManager.models.forEach((model: any) => {
             if (model && model.options && model.options.treatAsView) {
@@ -814,10 +814,10 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
      * @return {Promise<any>}
      */
     public static syncIndices(options?: SyncOptions): Promise<any> {
-        const indices: Array<{
+        const indices: {
             column: string;
             options: ColumnIndexOptions;
-        }> = (this.options as any).indices;
+        }[] = (this.options as any).indices;
 
         return Promise.all(indices.map((indexOptions, i) =>
             this.syncIndex(indexOptions.column, indexOptions.options, i + 1)));
