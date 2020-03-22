@@ -75,6 +75,8 @@
  *     simply cast options to the same type name as error states, but import
  *     this type from this module.
  */
+import { Graph } from './Graph';
+
 export * from 'sequelize-typescript';
 
 import Promise = require('bluebird');
@@ -709,8 +711,8 @@ export class Sequelize extends SequelizeOrigin {
  */
 export abstract class BaseModel<T> extends Model<BaseModel<T>> {
 
-    // noinspection JSUnusedGlobalSymbols
     /**
+     // noinspection JSUnusedGlobalSymbols
      * Override native drop method to add support of view drops
      *
      * @param {DropOptions} options
@@ -1092,5 +1094,56 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
                 ? val.toJSON()
                 : JSON.parse(JSON.stringify(val));
         }
+    }
+
+    /**
+     * Returns graph representation of the model associations.
+     * This would allow to traverse model association paths and detect
+     * cycles.
+     *
+     * @param {Graph<typeof BaseModel>} [graph]
+     * @return {Graph<typeof BaseModel>}
+     */
+    public static toGraph(
+        graph = new Graph<typeof BaseModel>(),
+    ): Graph<typeof BaseModel> {
+        if (!graph.hasVertex(this)) {
+            graph.addVertex(this);
+        }
+
+        for (const field of Object.keys(this.associations)) {
+            const relation = this.associations[field] as any;
+            const { target, options } = relation;
+            const through = options && options.through && options.through.model;
+
+            if (through && graph.hasEdge(this, through)) {
+                continue;
+            }
+
+            if (through) {
+                graph.addEdge(this, through);
+                through.toGraph(graph);
+
+                if (target && graph.hasEdge(through, target)) {
+                    continue;
+                }
+
+                if (target && !graph.hasVertex(target)) {
+                    graph.addEdge(through, target);
+                    target.toGraph(graph);
+                }
+            } else {
+                if (target && graph.hasEdge(this, target)) {
+                    continue;
+                }
+
+                if (target) {
+                    graph.addEdge(this, target);
+                    target.toGraph(graph);
+                }
+            }
+        }
+
+        return graph;
     }
 }

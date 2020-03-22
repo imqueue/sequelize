@@ -26,6 +26,7 @@ import isDefined = js.isDefined;
 import isOk = js.isOk;
 
 /* models exports! */
+export * from './Graph';
 export * from './BaseModel';
 export * from './helpers';
 export * from './decorators';
