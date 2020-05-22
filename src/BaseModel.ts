@@ -978,7 +978,10 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
         // noinspection TypeScriptUnresolvedVariable
         const returning = (this as any)._options.returning;
 
-        if (returning && !~returning.indexOf(name)) {
+        if (returning &&
+            Array.isArray(returning) &&
+            !~returning.indexOf(name)
+        ) {
             returning.push(name);
         }
 
