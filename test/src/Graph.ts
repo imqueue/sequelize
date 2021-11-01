@@ -15,5 +15,11 @@
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-export * from './decorators';
-export * from './Graph';
+import { expect } from 'chai';
+import { Graph } from '../../src';
+
+describe('Graph', () => {
+    it('should be a function', () => {
+        expect(typeof Graph).equals('function');
+    });
+});
