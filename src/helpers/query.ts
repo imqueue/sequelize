@@ -139,7 +139,7 @@ export namespace query {
             ));
         }
 
-        return Object.keys(input).reduce((res: any, prop: string) => {
+        return Object.keys(input as any).reduce((res: any, prop: string) => {
             if (~(attributes as string[]).indexOf(prop)) {
                 res[prop] = (input as any)[prop];
             }
@@ -617,7 +617,7 @@ export namespace query {
                 !fields[name] && (fields[name] = false));
         }
 
-        const fieldNames = Object.keys(input);
+        const fieldNames = Object.keys(input as any);
         const relationArgs = prepareInput<T>(
             input, filtered(model.associations, fieldNames),
             model, fields, transaction, parent);
