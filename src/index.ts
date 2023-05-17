@@ -17,13 +17,13 @@
  */
 import { js } from '@imqueue/js';
 import { DEFAULT_IMQ_SERVICE_OPTIONS, ILogger } from '@imqueue/rpc';
-import * as chalk from 'chalk';
 import * as fs from 'fs';
 import { resolve, sep } from 'path';
 import { SequelizeOptions } from 'sequelize-typescript';
 import { Sequelize } from './BaseModel';
 import isDefined = js.isDefined;
 import isOk = js.isOk;
+const chalk = require('fix-esm').require('chalk');
 
 /* models exports! */
 export * from './Graph';
@@ -181,7 +181,8 @@ export function database(
     }
 
     if (!options.logger) {
-        options.logger = DEFAULT_IMQ_SERVICE_OPTIONS.logger || console;
+        options.logger = DEFAULT_IMQ_SERVICE_OPTIONS.logger
+            || console as ILogger;
     }
 
     options.sequelize.logging =

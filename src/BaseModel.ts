@@ -89,7 +89,7 @@ import {
     Identifier, IncludeOptions,
     InitOptions as InitOptionsOrigin,
     ModelAttributes,
-    ModelOptions,
+    ModelOptions, ModelType,
     QueryInterface as QueryInterfaceOrigin,
     QueryOptions as QueryOptionsOrigin,
     QueryOptionsWithType,
@@ -105,7 +105,7 @@ import {
     Model,
     Sequelize as SequelizeOrigin,
 } from 'sequelize-typescript';
-import QueryTypes = require('sequelize/types/lib/query-types');
+import QueryTypes = require('sequelize/types/query-types');
 import {
     ColumnIndexOptions,
     IDynamicViewDefineOptions,
@@ -116,6 +116,8 @@ import {
 import { query } from './helpers';
 import sql = query.sql;
 import E = query.E;
+import { ModelAttributeColumnOptions } from 'sequelize/types/model';
+import { TableName } from 'sequelize/types/dialects/abstract/query-interface';
 
 export type Modify<T, R> = Pick<T, Exclude<keyof T, keyof R>> & R;
 
@@ -228,7 +230,7 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         select,
         increment,
         rawSelect,
-        QueryGenerator,
+        queryGenerator,
     } = queryInterface as QueryInterface;
     const del = (queryInterface as QueryInterface).delete;
 
@@ -270,7 +272,7 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         tableName: string,
         records: object[],
         options?: QueryOptions,
-        attributes?: string[] | string
+        attributes?: Record<string, ModelAttributeColumnOptions>,
     ): Promise<object> {
         fixReturningOptions(options);
 
@@ -281,9 +283,9 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
     /**
      * Updates a row
      */
-    (queryInterface as QueryInterface).update = function(
-        instance: Model,
-        tableName: string,
+    (queryInterface as any).update = function<M extends Model>(
+        instance: M,
+        tableName: TableName,
         values: object,
         identifier: WhereOptions,
         options?: QueryOptions
@@ -329,10 +331,10 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
      * Deletes multiple rows at once
      */
     (queryInterface as QueryInterface).bulkDelete = function(
-        tableName: string,
-        identifier: WhereOptions,
+        tableName: TableName,
+        identifier: WhereOptions<any>,
         options?: QueryOptions,
-        model?: typeof Model
+        model?: ModelType,
     ): Promise<object> {
         fixReturningOptions(options);
 
@@ -409,8 +411,8 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
      * Returns selected rows
      */
     (queryInterface as QueryInterface).select = function(
-        model: typeof Model | null,
-        tableName: string,
+        model: ModelType | null,
+        tableName: TableName,
         options?: QueryOptionsWithWhere,
     ): Promise<object[]> {
         fixReturningOptions(options as any);
@@ -439,10 +441,10 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
      * Selects raw without parsing the string into an object
      */
     (queryInterface as QueryInterface).rawSelect = function(
-        tableName: string,
+        tableName: TableName,
         options: QueryOptionsWithWhere,
         attributeSelector: string | string[],
-        model?: typeof Model
+        model?: ModelType,
     ): Promise<string[]> {
         fixReturningOptions(options as any);
 
@@ -451,9 +453,9 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
     };
 
     /**
-     * Override QueryGenerator behavior for DynamicViews on select queries
+     * Override queryGenerator behavior for DynamicViews on select queries
      */
-    const { selectQuery } = QueryGenerator as any;
+    const { selectQuery } = queryGenerator as any;
 
     // takes into account dynamic view can be included
     function fixIncludes(
@@ -462,7 +464,7 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         parentViewParams?: ViewParams,
         path: string = '',
     ): string {
-        const model: typeof BaseModel = options.model as typeof BaseModel;
+        const model = options.model as unknown as typeof BaseModel;
         const modelOptions: InitOptions = (
             (model || {} as any).options || {} as any
         ) as InitOptions;
@@ -502,14 +504,14 @@ function override(queryInterface: QueryInterfaceOrigin): QueryInterface {
         return sqlQuery;
     }
 
-    (QueryGenerator as any).selectQuery = (
+    (queryGenerator as any).selectQuery = (
         tableName: string,
         options: FindOptions,
         model: typeof BaseModel,
     ) => {
         const modelOptions: InitOptions = model.options as InitOptions;
         let sqlQuery = selectQuery.call(
-            QueryGenerator as any,
+            queryGenerator as any,
             tableName, options, model,
         );
         const viewParams = Object.assign({}, modelOptions.viewParams);
@@ -598,7 +600,10 @@ export class Sequelize extends SequelizeOrigin {
             return result;
         });
 
-        return withViews ? syncResult.then(() => this.syncViews()) : syncResult;
+        return (withViews
+            ? syncResult.then(() => this.syncViews())
+            : syncResult
+        ) as unknown as Promise<any>;
     }
 
     /**
@@ -745,7 +750,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
             return Promise.resolve();
         }
 
-        return super.sync(options);
+        return super.sync(options) as unknown as Promise<any>;
     }
 
     /**

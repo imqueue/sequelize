@@ -25,7 +25,7 @@ import {
     Op,
 } from 'sequelize';
 import { Model } from 'sequelize-typescript';
-import { Literal } from 'sequelize/types/lib/utils';
+import { Literal } from 'sequelize/types/utils';
 import { database } from '..';
 import { BaseModel, SaveOptions, Sequelize } from '../BaseModel';
 import {
@@ -36,6 +36,7 @@ import {
     OrderDirection,
     PaginationInput,
 } from '../types';
+import { ModelAttributeColumnReferencesOptions } from 'sequelize/types/model';
 
 export namespace query {
     import isObject = js.isObject;
@@ -125,7 +126,7 @@ export namespace query {
      * @return {any}
      */
     export const pureData: PureDataFunction = <T, M extends BaseModel<M>>(
-        model: typeof BaseModel,
+        model: typeof Model,
         input: T | T[],
         attributes?: string[],
     ) => {
@@ -472,7 +473,9 @@ export namespace query {
 
         const map: ForeignKeyMap = Object.keys(model.rawAttributes)
             .reduce((fkMap, name) => {
-                const relation = model.rawAttributes[name].references;
+                const relation =
+                    model.rawAttributes[name].references as ModelAttributeColumnReferencesOptions
+                ;
 
                 if (relation &&
                     relation.model === parent.name && relation.key
@@ -1045,7 +1048,7 @@ export namespace query {
     ): IncludeOptions | null {
         const currentModel = path.shift();
 
-        for (const include of (queryOptions.include || [])) {
+        for (const include of (queryOptions.include as any || [])) {
             const model = (include as IncludeOptions).model;
 
             // noinspection JSIncompatibleTypesComparison
@@ -1155,7 +1158,10 @@ export namespace query {
             }
 
             if (!found) {
-                queryOptions.include.push({ model, ...fields } as Includeable);
+                (queryOptions.include as any[]).push({
+                    model,
+                    ...fields,
+                } as Includeable);
             }
         }
 
