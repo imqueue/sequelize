@@ -18,12 +18,12 @@
 import { js } from '@imqueue/js';
 import { DEFAULT_IMQ_SERVICE_OPTIONS, ILogger } from '@imqueue/rpc';
 import * as fs from 'fs';
+import * as chalk from 'chalk';
 import { resolve, sep } from 'path';
 import { SequelizeOptions } from 'sequelize-typescript';
 import { Sequelize } from './BaseModel';
 import isDefined = js.isDefined;
 import isOk = js.isOk;
-const chalk = require('fix-esm').require('chalk');
 
 /* models exports! */
 export * from './Graph';
