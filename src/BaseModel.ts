@@ -761,18 +761,18 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
      */
     public static syncView(options?: SyncOptions): Promise<any> {
         const self: any = this;
+        // noinspection TypeScriptUnresolvedVariable
+        const queryInterface = self.QueryInterface || self.queryInterface;
 
         if (options && options.withoutDrop) {
-            // noinspection TypeScriptUnresolvedVariable
-            return self.QueryInterface.createView(
+            return queryInterface.createView(
                 self.getTableName(),
                 self.getViewDefinition(),
             );
         }
 
-        // noinspection TypeScriptUnresolvedVariable
-        return self.QueryInterface.dropView(self.getTableName())
-            .then(() => self.QueryInterface.createView(
+        return queryInterface.dropView(self.getTableName())
+            .then(() => queryInterface.createView(
                 self.getTableName(),
                 self.getViewDefinition(),
             ));
@@ -849,10 +849,11 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
         const indexName: string = options.name ||
             `${this.getTableName()}_${column}_idx${position}`;
         const chain = Promise.resolve(true);
+        // noinspection TypeScriptUnresolvedVariable
+        const queryInterface = self.QueryInterface || self.queryInterface;
 
         if (!options.safe) {
-            // noinspection TypeScriptUnresolvedVariable
-            chain.then(() => self.QueryInterface.sequelize.query(`
+            chain.then(() => queryInterface.sequelize.query(`
                 DROP INDEX${options.concurrently
                 ? ' CONCURRENTLY' : ''} IF EXISTS "${indexName}"
             `));
@@ -860,7 +861,7 @@ export abstract class BaseModel<T> extends Model<BaseModel<T>> {
 
         // tslint:disable-next-line:max-line-length
         // noinspection TypeScriptUnresolvedVariable,PointlessBooleanExpressionJS
-        chain.then(() => self.QueryInterface.sequelize.query(`
+        chain.then(() => queryInterface.sequelize.query(`
                 CREATE${options.unique
             ? ' UNIQUE' : ''} INDEX${options.concurrently
             ? ' CONCURRENTLY' : ''}${options.safe
